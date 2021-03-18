@@ -29,14 +29,8 @@ runs:
     run: |
       echo "Downloading linux toolkit"
       curl -LO https://${{ inputs.manager-host }}/client-downloads/toolkit-linux.tgz
-      pwd
-      localdir=$(pwd)
-      ls -lah
-      ls -ld .
-      whoami
       echo "Unpacking linux toolkit"
-      cd /tmp/
-      tar -zxf $localdir/toolkit-linux.tgz
+      tar -zxf toolkit-linux.tgz
 
   - name: Get IAM token
     shell: bash
