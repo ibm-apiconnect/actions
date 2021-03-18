@@ -24,9 +24,6 @@ runs:
   using: "composite"
   steps:
 
-  - name: Check out code
-    uses: actions/checkout@v1
-
   - name: Get APIC Toolkit
     run: |
       curl -LO https://${{ inputs.manager-host }}/client-downloads/toolkit-linux.tgz
