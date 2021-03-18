@@ -31,7 +31,6 @@ runs:
       curl -LO https://${{ inputs.manager-host }}/client-downloads/toolkit-linux.tgz
       echo "Unpacking linux toolkit"
       tar -zxf toolkit-linux.tgz
-      chmod a+x apic-slim
 
   - name: Get IAM token
     shell: bash
