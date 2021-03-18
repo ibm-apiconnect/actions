@@ -1,0 +1,55 @@
+name: 'Publish API'
+description: 'Publish API to IBM API Connect'
+inputs:
+  manager-host:  
+    description: 'Management hostname'
+    required: true
+  api-host:  
+    description: 'Platform API hostname'
+    required: true
+  iam-apikey:  
+    description: 'IAM API key'
+    required: true
+  provider-org:  
+    description: 'Name of ID of provider org to publish to'
+    required: true
+  catalog:  
+    description: 'Name of ID of catalog to publish to'
+    required: true
+  product-file:  
+    description: 'File name of product yaml to publish'
+    required: true
+    default: 'product.yaml'
+runs:
+  using: "composite"
+  steps:
+
+  - name: Check out code
+    uses: actions/checkout@v1
+
+  - name: Get APIC Toolkit
+    run: |
+      curl -LO https://${{ inputs.manager-host }}/client-downloads/toolkit-linux.tgz
+      tar -zxf toolkit-linux.tgz
+      chmod a+x apic-slim
+
+  - name: Get IAM token
+    run: |
+      mkdir ~/.apiconnect/
+      touch ~/.apiconnect/token
+      ACCESS_TOKEN=$(curl -s "https://iam.cloud.ibm.com/identity/token" -H 'Content-Type: application/x-www-form-urlencoded' -H 'Accept: application/json' --data "grant_type=urn:ibm:params:oauth:grant-type:apikey&apikey=${{ inputs.iam-apikey}}" | jq .access_token -r)
+      echo "${{ inputs.api-host}}/api: |
+              refresh_token: \"\"
+              access_token: ${ACCESS_TOKEN}" > ~/.apiconnect/token 
+
+  - name: List orgs with apic CLI
+    run: |
+      ./apic-slim orgs --accept-license --live-help --my --server ${{ inputs.api-host }}
+
+  - name: Validate product
+    run: |
+      ./apic-slim validate ${{ inputs.product-file }}
+
+  - name: Publlish product with apic CLI
+    run: |
+      ./apic-slim products:publish --server ${{ inputs.api-host }} --org ${{ inputs.provider-org }} --catalog ${{ inputs.catalog }} ${{ inputs.product-file }}
