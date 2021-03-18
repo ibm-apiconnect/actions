@@ -25,12 +25,14 @@ runs:
   steps:
 
   - name: Get APIC Toolkit
+    shell: bash
     run: |
       curl -LO https://${{ inputs.manager-host }}/client-downloads/toolkit-linux.tgz
       tar -zxf toolkit-linux.tgz
       chmod a+x apic-slim
 
   - name: Get IAM token
+    shell: bash
     run: |
       mkdir ~/.apiconnect/
       touch ~/.apiconnect/token
@@ -40,13 +42,16 @@ runs:
               access_token: ${ACCESS_TOKEN}" > ~/.apiconnect/token 
 
   - name: List orgs with apic CLI
+    shell: bash
     run: |
       ./apic-slim orgs --accept-license --live-help --my --server ${{ inputs.api-host }}
 
   - name: Validate product
+    shell: bash
     run: |
       ./apic-slim validate ${{ inputs.product-file }}
 
   - name: Publlish product with apic CLI
+    shell: bash
     run: |
       ./apic-slim products:publish --server ${{ inputs.api-host }} --org ${{ inputs.provider-org }} --catalog ${{ inputs.catalog }} ${{ inputs.product-file }}
