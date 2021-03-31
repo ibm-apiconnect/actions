@@ -53,7 +53,7 @@ runs:
               refresh_token: \"\"
               access_token: ${ACCESS_TOKEN}" > ~/.apiconnect/token 
       fi
-      if ["${{ inputs.username }}" != ""]; then
+      if [[ "${{ inputs.username }}" != "" ]]; then
         ./apic-slim login --accept-license --live-help --server ${{ inputs.api-host }} --username ${{ inputs.username }} --password ${{ inputs.password }} --realm ${{ inputs.realm }}
       fi
 
@@ -67,7 +67,7 @@ runs:
     run: |
       ./apic-slim validate ${{ inputs.product-file }}
 
-  - name: Publlish product with apic CLI
+  - name: Publish product with apic CLI
     shell: bash
     run: |
       ./apic-slim products:publish --server ${{ inputs.api-host }} --org ${{ inputs.provider-org }} --catalog ${{ inputs.catalog }} ${{ inputs.product-file }}
