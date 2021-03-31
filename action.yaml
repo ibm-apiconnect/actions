@@ -9,7 +9,7 @@ inputs:
     required: true
   iam-apikey:  
     description: 'IAM API key'
-    required: true
+    required: false
   provider-org:  
     description: 'Name of ID of provider org to publish to'
     required: true
@@ -34,6 +34,7 @@ runs:
 
   - name: Get IAM token
     shell: bash
+    if: ${{ inputs.iam-apikey }}  
     run: |
       mkdir ~/.apiconnect/
       touch ~/.apiconnect/token
@@ -42,6 +43,11 @@ runs:
               refresh_token: \"\"
               access_token: ${ACCESS_TOKEN}" > ~/.apiconnect/token 
 
+  - name: Log in with username / password
+    shell: bash
+    if: ${{ inputs.username }}  
+    run: |
+      echo "Username is specified, log in with that"
   - name: List orgs with apic CLI
     shell: bash
     run: |
