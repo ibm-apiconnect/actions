@@ -57,11 +57,6 @@ runs:
         ./apic-slim login --accept-license --live-help --server ${{ inputs.api-host }} --username ${{ inputs.username }} --password ${{ inputs.password }} --realm ${{ inputs.realm }}
       fi
 
-  - name: Log in with username / password
-    shell: bash
-    if: ${{ inputs.username }}  
-    run: |
-      echo "Username is specified, log in with that"
   - name: List orgs with apic CLI
     shell: bash
     run: |
