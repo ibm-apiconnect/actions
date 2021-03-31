@@ -8,7 +8,17 @@ inputs:
     description: 'Platform API hostname'
     required: true
   iam-apikey:  
-    description: 'IAM API key'
+    description: 'IAM API key - require this or username,password and realm'
+    required: false
+  username:  
+    description: 'API Manager username'
+    required: false
+  password:  
+    description: 'API Manager password'
+    required: false
+  realm:  
+    description: 'Realm for log in '
+    default: "provider/default-idp-2"
     required: false
   provider-org:  
     description: 'Name of ID of provider org to publish to'
@@ -32,16 +42,20 @@ runs:
       echo "Unpacking linux toolkit"
       tar -zxf toolkit-linux.tgz
 
-  - name: Get IAM token
+  - name: Login with IAM token or username/password
     shell: bash
-    if: ${{ inputs.iam-apikey }}  
     run: |
-      mkdir ~/.apiconnect/
-      touch ~/.apiconnect/token
-      ACCESS_TOKEN=$(curl -s "https://iam.cloud.ibm.com/identity/token" -H 'Content-Type: application/x-www-form-urlencoded' -H 'Accept: application/json' --data "grant_type=urn:ibm:params:oauth:grant-type:apikey&apikey=${{ inputs.iam-apikey}}" | jq .access_token -r)
-      echo "${{ inputs.api-host}}/api: |
+      if ["${{ inputs.iam-apikey }}" != ""]; then
+        mkdir ~/.apiconnect/
+        touch ~/.apiconnect/token
+        ACCESS_TOKEN=$(curl -s "https://iam.cloud.ibm.com/identity/token" -H 'Content-Type: application/x-www-form-urlencoded' -H 'Accept: application/json' --data "grant_type=urn:ibm:params:oauth:grant-type:apikey&apikey=${{ inputs.iam-apikey}}" | jq .access_token -r)
+        echo "${{ inputs.api-host}}/api: |
               refresh_token: \"\"
               access_token: ${ACCESS_TOKEN}" > ~/.apiconnect/token 
+      fi
+      if ["${{ inputs.username }}" != ""]; then
+        ./apic-slim login --accept-license --live-help --server ${{ inputs.api-host }} --username ${{ inputs.username }} --password ${{ inputs.password }} --realm ${{ inputs.realm }}
+      fi
 
   - name: Log in with username / password
     shell: bash
