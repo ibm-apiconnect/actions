@@ -2,7 +2,7 @@ name: 'Publish API'
 description: 'Publish API to IBM API Connect'
 inputs:
   manager-host:  
-    description: 'Management hostname'
+    description: 'API Manager hostname'
     required: true
   api-host:  
     description: 'Platform API hostname'
@@ -45,7 +45,7 @@ runs:
       echo "Unpacking linux toolkit"
       tar -zxf toolkit-linux.tgz
 
-  - name: Login with IAM token or username/password
+  - name: Login to API Manager with provided credentials
     shell: bash
     run: |
       if [[ "${{ inputs.iam-apikey }}" != "" ]]; then

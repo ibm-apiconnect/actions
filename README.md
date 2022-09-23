@@ -11,13 +11,13 @@ jobs:
     name: APIC deployment
     steps:
     - uses: actions/checkout@v2
-    - uses: rickymoorhouse/apic-deploy@main
+    - uses: ibm-apiconnect/apic-deploy@main
       with:
         manager-host: {{ manager hostname }}
         api-host:  {{ platform api hostname }}
         provider-org: {{ provider org name }}
         catalog: {{ catalog name }}
-        iam-apikey: {{ IBM Cloud IAM apikey }}
+        apikey: {{ API Connect apikey }}
         product-file: {{ product file to publish }}
 ```
 
