@@ -8,7 +8,10 @@ inputs:
     description: 'Platform API hostname'
     required: true
   iam-apikey:  
-    description: 'IAM API key - require this or username,password and realm'
+    description: 'IAM API key - require this, apikey or username,password and realm'
+    required: false
+  apikey:  
+    description: 'APIC API key - require this, iam-apikey or username,password and realm'
     required: false
   username:  
     description: 'API Manager username'
@@ -53,6 +56,10 @@ runs:
         echo "${{ inputs.api-host}}/api: |
               refresh_token: \"\"
               access_token: ${ACCESS_TOKEN}" > ~/.apiconnect/token 
+      fi
+      if [[ "${{ inputs.apikey }}" != "" ]]; then
+        echo "Using apikey"
+        ./apic-slim login --accept-license --live-help --server ${{ inputs.api-host }} --sso --apiKey ${{ inputs.apikey }} --context provider
       fi
       if [[ "${{ inputs.username }}" != "" ]]; then
         echo "Using username/password"
