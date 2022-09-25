@@ -47,7 +47,7 @@ runs:
   - name: Get APIC Toolkit
     shell: bash
     run: |
-      curl -sLO https://${{ inputs.manager-host }}/client-downloads/toolkit-linux.tgz
+      curl -LO https://${{ inputs.manager-host }}/client-downloads/toolkit-linux.tgz
       tar -zxf toolkit-linux.tgz
 
   - name: Validate product
