@@ -33,6 +33,13 @@ inputs:
     description: 'File name of product yaml to publish'
     required: true
     default: 'product.yaml'
+  validate_only:
+    description: "Only validate API content"
+    required: true
+    default: "false"
+branding:
+  icon: 'upload-cloud'
+  color: 'blue'
 runs:
   using: "composite"
   steps:
@@ -40,13 +47,17 @@ runs:
   - name: Get APIC Toolkit
     shell: bash
     run: |
-      echo "Downloading linux toolkit"
-      curl -LO https://${{ inputs.manager-host }}/client-downloads/toolkit-linux.tgz
-      echo "Unpacking linux toolkit"
+      curl -sLO https://${{ inputs.manager-host }}/client-downloads/toolkit-linux.tgz
       tar -zxf toolkit-linux.tgz
+
+  - name: Validate product
+    shell: bash
+    run: |
+      ./apic-slim --accept-license --live-help validate ${{ inputs.product-file }}
 
   - name: Login to API Manager with provided credentials
     shell: bash
+    if: ${{ inputs.validate_only == "false" }}
     run: |
       if [[ "${{ inputs.iam-apikey }}" != "" ]]; then
         echo "Using IAM API Key"
@@ -59,24 +70,15 @@ runs:
       fi
       if [[ "${{ inputs.apikey }}" != "" ]]; then
         echo "Using apikey"
-        ./apic-slim login --accept-license --live-help --server ${{ inputs.api-host }} --sso --apiKey ${{ inputs.apikey }} --context provider
+        ./apic-slim login --server ${{ inputs.api-host }} --sso --apiKey ${{ inputs.apikey }} --context provider
       fi
       if [[ "${{ inputs.username }}" != "" ]]; then
         echo "Using username/password"
-        ./apic-slim login --accept-license --live-help --server ${{ inputs.api-host }} --username ${{ inputs.username }} --password ${{ inputs.password }} --realm ${{ inputs.realm }}
+        ./apic-slim login --server ${{ inputs.api-host }} --username ${{ inputs.username }} --password ${{ inputs.password }} --realm ${{ inputs.realm }}
       fi
 
-  - name: List orgs with apic CLI
-    shell: bash
-    run: |
-      ./apic-slim orgs --accept-license --live-help --my --server ${{ inputs.api-host }}
-
-  - name: Validate product
-    shell: bash
-    run: |
-      ./apic-slim validate ${{ inputs.product-file }}
-
   - name: Publish product with apic CLI
+    if: ${{ inputs.validate_only == "false" }}
     shell: bash
     run: |
-      ./apic-slim products:publish --server ${{ inputs.api-host }} --org ${{ inputs.provider-org }} --catalog ${{ inputs.catalog }} --migrate-subscriptions ${{ inputs.product-file }}
+      ./apic-slim products:publish --server ${{ inputs.api-host }} --org ${{ inputs.provider-org }} --catalog ${{ inputs.catalog }} --migrate_subscriptions ${{ inputs.product-file }}
