@@ -79,4 +79,4 @@ runs:
   - name: Publish product with apic CLI
     shell: bash
     run: |
-      ./apic-slim products:publish --server ${{ inputs.api-host }} --org ${{ inputs.provider-org }} --catalog ${{ inputs.catalog }} ${{ inputs.product-file }}
+      ./apic-slim products:publish --server ${{ inputs.api-host }} --org ${{ inputs.provider-org }} --catalog ${{ inputs.catalog }} --migrate-subscriptions ${{ inputs.product-file }}
