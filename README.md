@@ -39,4 +39,4 @@ Authentication options - you will need one of these sets, depending on your API 
  - username / password / realm - the username, password and realm to use to authenticate (typically used with a local user registry or LDAP)
  - iam-apikey - An IBM Cloud API Key (for use with reserved instance)
  
-
+If you just want to validate your apis and products, then you can pass the variable `validate_only: true` without any authentication option.
