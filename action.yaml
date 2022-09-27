@@ -40,7 +40,7 @@ inputs:
   migrate_subscriptions:
     description: "Migrate subscriptions on publish"
     required: true
-    default: 'true'
+    default: 'false'
 branding:
   icon: 'upload-cloud'
   color: 'blue'
