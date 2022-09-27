@@ -37,6 +37,10 @@ inputs:
     description: "Only validate API content"
     required: true
     default: 'false'
+  migrate_subscriptions:
+    description: "Migrate subscriptions on publish"
+    required: true
+    default: 'true'
 branding:
   icon: 'upload-cloud'
   color: 'blue'
@@ -81,4 +85,8 @@ runs:
     if: ${{ inputs.validate_only == 'false' }}
     shell: bash
     run: |
-      ./apic-slim products:publish --server ${{ inputs.api-host }} --org ${{ inputs.provider-org }} --catalog ${{ inputs.catalog }} --migrate_subscriptions ${{ inputs.product-file }}
+      if [[ "${{ inputs.migrate_subscriptions }}" == "true" ]]; then
+        echo "Enabling option to migrate subscriptions"
+        OPTIONS="--migrate_subscriptions"
+      fi
+      ./apic-slim products:publish --server ${{ inputs.api-host }} --org ${{ inputs.provider-org }} --catalog ${{ inputs.catalog }} $OPTIONS ${{ inputs.product-file }}
