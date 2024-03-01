@@ -33,10 +33,18 @@ inputs:
     description: 'File name of product yaml to publish'
     required: true
     default: 'product.yaml'
+  api-file:  
+    description: 'File name of api yaml to validate'
+    required: false
+    default: 'api.yaml'    
   validate_only:
     description: "Only validate API content"
     required: true
     default: 'false'
+  validate_rulesets:
+    description: "Validate compliance against rulesets"
+    required: true
+    default: 'false'    
   migrate_subscriptions:
     description: "Migrate subscriptions on publish"
     required: true
@@ -81,6 +89,14 @@ runs:
         ./apic-slim login --server ${{ inputs.api-host }} --username ${{ inputs.username }} --password ${{ inputs.password }} --realm ${{ inputs.realm }}
       fi
 
+  - name: Validate compliance with rulesets
+    shell: bash
+    if: ${{ inputs.validate_rulesets == 'true' }}
+    run: |
+      ./apic-slim --mode governance compliance:validate --server ${{ inputs.api-host }} --org ${{ inputs.provider-org }} ${{ inputs.api-file }} --format json | tee compliance.json      
+      jq -cr '.errors[] | "::warning file=orders_api.yaml ::title\(.severity): \(.ruleset_name) \(.rule_name)::\(.message)"' compliance.json
+
+      
   - name: Publish product with apic CLI
     if: ${{ inputs.validate_only == 'false' }}
     shell: bash
