@@ -94,7 +94,7 @@ runs:
     if: ${{ inputs.validate_rulesets == 'true' }}
     run: |
       ./apic-slim --mode governance compliance:validate --server ${{ inputs.api-host }} --org ${{ inputs.provider-org }} ${{ inputs.api-file }} --format json | tee compliance.json      
-      jq -cr '.errors[] | "::warning file=${{ inputs.api-file }},::title\(.severity): \(.ruleset_name) \(.rule_name)::\(.message)"' compliance.json
+      jq -cr '.errors[] | "::warning file=${{ inputs.api-file }},::title=\(.severity): \(.ruleset_name) \(.rule_name)::\(.message)"' compliance.json
 
       
   - name: Publish product with apic CLI
