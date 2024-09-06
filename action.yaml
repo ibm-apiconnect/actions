@@ -57,7 +57,7 @@ runs:
   - name: Validate product
     shell: bash
     run: |
-      ./apic-slim --accept-license --live-help validate ${{ inputs.product-file }}
+      ./apic --accept-license --live-help validate ${{ inputs.product-file }}
 
   - name: Login to API Manager with provided credentials
     shell: bash
@@ -74,11 +74,11 @@ runs:
       fi
       if [[ "${{ inputs.apikey }}" != "" ]]; then
         echo "Using apikey"
-        ./apic-slim login --server ${{ inputs.api-host }} --sso --apiKey ${{ inputs.apikey }} --context provider
+        ./apic login --server ${{ inputs.api-host }} --sso --apiKey ${{ inputs.apikey }} --context provider
       fi
       if [[ "${{ inputs.username }}" != "" ]]; then
         echo "Using username/password"
-        ./apic-slim login --server ${{ inputs.api-host }} --username ${{ inputs.username }} --password ${{ inputs.password }} --realm ${{ inputs.realm }}
+        ./apic login --server ${{ inputs.api-host }} --username ${{ inputs.username }} --password ${{ inputs.password }} --realm ${{ inputs.realm }}
       fi
 
   - name: Publish product with apic CLI
@@ -89,4 +89,4 @@ runs:
         echo "Enabling option to migrate subscriptions"
         OPTIONS="--migrate_subscriptions"
       fi
-      ./apic-slim products:publish --server ${{ inputs.api-host }} --org ${{ inputs.provider-org }} --catalog ${{ inputs.catalog }} $OPTIONS ${{ inputs.product-file }}
+      ./apic products:publish --server ${{ inputs.api-host }} --org ${{ inputs.provider-org }} --catalog ${{ inputs.catalog }} $OPTIONS ${{ inputs.product-file }}
