@@ -45,6 +45,7 @@ runs:
     run: |
       curl -LO https://${{ inputs.manager-host }}/client-downloads/toolkit-linux.tgz
       tar -zxf toolkit-linux.tgz
+      ./apic --accept-license --live-help version
 
   - name: Login to API Manager with provided credentials
     shell: bash
