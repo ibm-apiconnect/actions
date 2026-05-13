@@ -29,18 +29,10 @@ inputs:
   catalog:  
     description: 'Name of ID of catalog to publish to'
     required: true
-  product-file:  
-    description: 'File name of product yaml to publish'
+  project:  
+    description: 'Name of project to build'
     required: true
-    default: 'product.yaml'
-  validate_only:
-    description: "Only validate API content"
-    required: true
-    default: 'false'
-  migrate_subscriptions:
-    description: "Migrate subscriptions on publish"
-    required: true
-    default: 'false'
+    default: 'project'
 branding:
   icon: 'upload-cloud'
   color: 'blue'
@@ -53,11 +45,6 @@ runs:
     run: |
       curl -LO https://${{ inputs.manager-host }}/client-downloads/toolkit-linux.tgz
       tar -zxf toolkit-linux.tgz
-
-  - name: Validate product
-    shell: bash
-    run: |
-      ./apic --accept-license --live-help validate ${{ inputs.product-file }}
 
   - name: Login to API Manager with provided credentials
     shell: bash
@@ -81,12 +68,14 @@ runs:
         ./apic login --server ${{ inputs.api-host }} --username ${{ inputs.username }} --password ${{ inputs.password }} --realm ${{ inputs.realm }}
       fi
 
-  - name: Publish product with apic CLI
+  - name: Build deployment for project
     if: ${{ inputs.validate_only == 'false' }}
     shell: bash
     run: |
-      if [[ "${{ inputs.migrate_subscriptions }}" == "true" ]]; then
-        echo "Enabling option to migrate subscriptions"
-        OPTIONS="--migrate_subscriptions"
-      fi
-      ./apic products:publish --server ${{ inputs.api-host }} --org ${{ inputs.provider-org }} --catalog ${{ inputs.catalog }} $OPTIONS ${{ inputs.product-file }}
+      ./apic build -l ${{ inputs.project }} -o built-project.zip
+
+  - name: Publish project with apic CLI
+    if: ${{ inputs.validate_only == 'false' }}
+    shell: bash
+    run: |
+      ./apic projects:publish --server ${{ inputs.api-host }} --org ${{ inputs.provider-org }} --catalog ${{ inputs.catalog }} -o built-project.zip
