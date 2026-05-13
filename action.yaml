@@ -80,4 +80,4 @@ runs:
   - name: Publish project with apic CLI
     shell: bash
     run: |
-      ./apic projects:publish --insecure-skip-tls-verify true --server ${{ inputs.api-host }} --org ${{ inputs.provider-org }} --catalog ${{ inputs.catalog }} built-project.zip
+      ./apic projects:publish --server ${{ inputs.api-host }} --org ${{ inputs.provider-org }} --catalog ${{ inputs.catalog }} built-project.zip
