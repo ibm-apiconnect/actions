@@ -33,6 +33,10 @@ inputs:
     description: 'Name of project to build'
     required: true
     default: 'project'
+  project-path:  
+    description: 'Path to project to build'
+    required: true
+    default: '.'    
 branding:
   icon: 'upload-cloud'
   color: 'blue'
@@ -71,7 +75,7 @@ runs:
   - name: Build deployment for project
     shell: bash
     run: |
-      ./apic build -l ${{ inputs.project }} -o built-project.zip
+      ./apic build -l ${{ inputs.project-path }} ${{ inputs.project }} -o built-project.zip
 
   - name: Publish project with apic CLI
     shell: bash
