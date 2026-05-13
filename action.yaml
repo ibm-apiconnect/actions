@@ -48,7 +48,6 @@ runs:
 
   - name: Login to API Manager with provided credentials
     shell: bash
-    if: ${{ inputs.validate_only == 'false' }}
     run: |
       if [[ "${{ inputs.iam-apikey }}" != "" ]]; then
         echo "Using IAM API Key"
@@ -69,13 +68,11 @@ runs:
       fi
 
   - name: Build deployment for project
-    if: ${{ inputs.validate_only == 'false' }}
     shell: bash
     run: |
       ./apic build -l ${{ inputs.project }} -o built-project.zip
 
   - name: Publish project with apic CLI
-    if: ${{ inputs.validate_only == 'false' }}
     shell: bash
     run: |
       ./apic projects:publish --server ${{ inputs.api-host }} --org ${{ inputs.provider-org }} --catalog ${{ inputs.catalog }} -o built-project.zip
