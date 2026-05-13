@@ -61,11 +61,11 @@ runs:
       fi
       if [[ "${{ inputs.apikey }}" != "" ]]; then
         echo "Using apikey"
-        ./apic login --certificate-authority /etc/ssl/certs/ca-certificates --server ${{ inputs.api-host }} --sso --apiKey ${{ inputs.apikey }} --context provider
+        ./apic login --insecure-skip-tls-verify true --server ${{ inputs.api-host }} --sso --apiKey ${{ inputs.apikey }} --context provider
       fi
       if [[ "${{ inputs.username }}" != "" ]]; then
         echo "Using username/password"
-        ./apic login --certificate-authority /etc/ssl/certs/ca-certificates --server ${{ inputs.api-host }} --username ${{ inputs.username }} --password ${{ inputs.password }} --realm ${{ inputs.realm }}
+        ./apic login --insecure-skip-tls-verify true --server ${{ inputs.api-host }} --username ${{ inputs.username }} --password ${{ inputs.password }} --realm ${{ inputs.realm }}
       fi
 
   - name: Build deployment for project
@@ -76,4 +76,4 @@ runs:
   - name: Publish project with apic CLI
     shell: bash
     run: |
-      ./apic projects:publish --certificate-authority /etc/ssl/certs/ca-certificates --server ${{ inputs.api-host }} --org ${{ inputs.provider-org }} --catalog ${{ inputs.catalog }} -o built-project.zip
+      ./apic projects:publish --insecure-skip-tls-verify true --server ${{ inputs.api-host }} --org ${{ inputs.provider-org }} --catalog ${{ inputs.catalog }} -o built-project.zip
