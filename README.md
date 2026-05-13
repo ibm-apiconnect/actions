@@ -13,14 +13,15 @@ jobs:
     name: APIC deployment
     steps:
     - uses: actions/checkout@v2
-    - uses: ibm-apiconnect/apic-deploy@main
+    - uses: ibm-apiconnect/apic-deploy@v12.1
       with:
         manager-host: {{ manager hostname }}
         api-host:  {{ platform api hostname }}
         provider-org: {{ provider org name }}
         catalog: {{ catalog name }}
         apikey: {{ API Connect apikey }}
-        product-file: {{ product file to publish }}
+        project-path: {{ product path within repo }}
+        project: {{ name of project to publish}}
 ```
 
 ## Parameters
@@ -31,19 +32,12 @@ The following parameters are always required:
  - api-host - The hostname for the Platform API
  - provider-org - The provider org to use. 
  - catalog - The name of the catalog to publish the API into
- - product-file - The path to the product yaml within your git repo
+ - project-path - The path to the folder within the repo containing API Projects
+ - project - The name of the project to publish (use --all for all projects)
 
 Authentication options - you will need one of these sets, depending on your API Connect deployment
 
  - apikey - An API Key obtained from {manager-host}/manager/auth/manager/sign-in/?from=TOOLKIT (typically used with an OIDC user registry e.g. in APIC on AWS)
  - username / password / realm - the username, password and realm to use to authenticate (typically used with a local user registry or LDAP)
  - iam-apikey - An IBM Cloud API Key (for use with reserved instance)
-
-### Validate API definitions
-
-If you just want to validate your apis and products, then you can pass the variable `validate_only: true` without any authentication option.  This is useful for a PR check. The default is false. 
-
-### Migrate Subscriptions
-
-If you need to ensure the subscriptions remain in place when publishing you can pass `migrate_subscription: true` as a parameter.  This is useful in development so that you can configure your tests without having to re-subscribe to the APIs every time but shouldn't be a substitution for proper API versioning and lifecycle management in a production environment. The default is false.  
 
