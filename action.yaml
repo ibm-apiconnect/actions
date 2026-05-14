@@ -58,7 +58,7 @@ runs:
   - name: Validate api specification
     shell: bash
     run: |
-      ./apic-slim --accept-license --live-help validate ${{ inputs.api-spec }}
+      ./apic --accept-license --live-help validate ${{ inputs.api-spec }}
 
   - name: Login to API Manager with provided credentials
     shell: bash
@@ -75,18 +75,18 @@ runs:
       fi
       if [[ "${{ inputs.apikey }}" != "" ]]; then
         echo "Using apikey"
-        ./apic-slim login --server ${{ inputs.api-host }} --sso --apiKey ${{ inputs.apikey }} --context provider
+        ./apic login --server ${{ inputs.api-host }} --sso --apiKey ${{ inputs.apikey }} --context provider
       fi
       if [[ "${{ inputs.username }}" != "" ]]; then
         echo "Using username/password"
-        ./apic-slim login --server ${{ inputs.api-host }} --username ${{ inputs.username }} --password ${{ inputs.password }} --realm ${{ inputs.realm }}
+        ./apic login --server ${{ inputs.api-host }} --username ${{ inputs.username }} --password ${{ inputs.password }} --realm ${{ inputs.realm }}
       fi
 
   - name: Validate compliance with rulesets
     shell: bash
     if: ${{ inputs.validate_rulesets == 'true' }}
     run: |
-      ./apic-slim --mode governance compliance:validate --server ${{ inputs.api-host }} --org ${{ inputs.provider-org }} ${{ inputs.api-file }} --format json | tee compliance.json      
+      ./apic --mode governance compliance:validate --server ${{ inputs.api-host }} --org ${{ inputs.provider-org }} ${{ inputs.api-file }} --format json | tee compliance.json      
       jq -cr '.errors[] | "::warning file=${{ inputs.api-file }},::title=\(.severity): \(.ruleset_name) \(.rule_name)::\(.message)"' compliance.json
 
       
