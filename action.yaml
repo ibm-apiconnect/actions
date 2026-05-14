@@ -58,7 +58,7 @@ runs:
   - name: Accept APIC license and check version
     shell: bash
     run: |
-      ./apic --accept-license --live-help version
+      ./apic  --insecure-skip-tls-verify --accept-license --live-help version
 
   - name: Login to API Manager with provided credentials
     shell: bash
@@ -74,11 +74,11 @@ runs:
       fi
       if [[ "${{ inputs.apikey }}" != "" ]]; then
         echo "Using apikey"
-        ./apic login --server ${{ inputs.api-host }} --sso --apiKey ${{ inputs.apikey }} --context provider
+        ./apic login  --insecure-skip-tls-verify --server ${{ inputs.api-host }} --sso --apiKey ${{ inputs.apikey }} --context provider
       fi
       if [[ "${{ inputs.username }}" != "" ]]; then
         echo "Using username/password"
-        ./apic login --server ${{ inputs.api-host }} --username ${{ inputs.username }} --password ${{ inputs.password }} --realm ${{ inputs.realm }}
+        ./apic login --insecure-skip-tls-verify --server ${{ inputs.api-host }} --username ${{ inputs.username }} --password ${{ inputs.password }} --realm ${{ inputs.realm }}
       fi
 
   - name: Validate compliance with rulesets
