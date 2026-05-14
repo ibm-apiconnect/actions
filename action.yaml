@@ -72,7 +72,7 @@ runs:
   - name: Validate compliance with rulesets
     shell: bash
     run: |
-      ./apic --mode governance compliance:validate  --insecure-skip-tls-verify --server ${{ inputs.api-host }} --org ${{ inputs.provider-org }} ${{ inputs.api-spec }} --format json | tee compliance.json      
-      jq -cr '.errors[] | "::warning file=${{ inputs.api-file }},::title=\(.severity): \(.ruleset_name) \(.rule_name)::\(.message)"' compliance.json
+      ./apic --mode governance compliance:validate  --insecure-skip-tls-verify --server ${{ inputs.api-host }} --org ${{ inputs.provider-org }} ${{ inputs.api-spec }} --format json > compliance.json
+      jq -cr '.errors[] | if .severity == "error" then "::" + .severity else "::warning" end + " file=${{ inputs.api-spec }},line=\(.start_line)::title=\(.severity): \(.ruleset_name) \(.rule_name)::\(.message)"' compliance.json
 
       
