@@ -1,5 +1,5 @@
-name: 'Publish API'
-description: 'Publish API to IBM API Connect'
+name: 'Validate API'
+description: 'Validate API specification and compliance with rulesets'
 inputs:
   manager-host:  
     description: 'API Manager hostname'
@@ -26,15 +26,8 @@ inputs:
   provider-org:  
     description: 'Name of ID of provider org to publish to'
     required: true
-  catalog:  
-    description: 'Name of ID of catalog to publish to'
-    required: true
-  product-file:  
-    description: 'File name of product yaml to publish'
-    required: true
-    default: 'product.yaml'
-  api-file:  
-    description: 'File name of api yaml to validate'
+  api-spec:  
+    description: 'File name of api specification to validate'
     required: false
     default: 'api.yaml'    
   validate_only:
@@ -62,10 +55,10 @@ runs:
       curl -LO https://${{ inputs.manager-host }}/client-downloads/toolkit-linux.tgz
       tar -zxf toolkit-linux.tgz
 
-  - name: Validate product
+  - name: Validate api specification
     shell: bash
     run: |
-      ./apic-slim --accept-license --live-help validate ${{ inputs.product-file }}
+      ./apic-slim --accept-license --live-help validate ${{ inputs.api-spec }}
 
   - name: Login to API Manager with provided credentials
     shell: bash
@@ -97,12 +90,3 @@ runs:
       jq -cr '.errors[] | "::warning file=${{ inputs.api-file }},::title=\(.severity): \(.ruleset_name) \(.rule_name)::\(.message)"' compliance.json
 
       
-  - name: Publish product with apic CLI
-    if: ${{ inputs.validate_only == 'false' }}
-    shell: bash
-    run: |
-      if [[ "${{ inputs.migrate_subscriptions }}" == "true" ]]; then
-        echo "Enabling option to migrate subscriptions"
-        OPTIONS="--migrate_subscriptions"
-      fi
-      ./apic-slim products:publish --server ${{ inputs.api-host }} --org ${{ inputs.provider-org }} --catalog ${{ inputs.catalog }} $OPTIONS ${{ inputs.product-file }}
