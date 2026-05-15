@@ -36,7 +36,14 @@ inputs:
   project-path:  
     description: 'Path to project to build'
     required: true
-    default: '.'    
+    default: '.'
+  test-endpoint:
+    description: 'Endpoint to run tests against'
+    required: true
+  test-name:
+    description: 'Name of test to run'
+    required: true
+
 branding:
   icon: 'upload-cloud'
   color: 'blue'
@@ -72,12 +79,9 @@ runs:
         ./apic login --insecure-skip-tls-verify true --server ${{ inputs.api-host }} --username ${{ inputs.username }} --password ${{ inputs.password }} --realm ${{ inputs.realm }}
       fi
 
-  - name: Build deployment for project
+  - name: Run tests for project
     shell: bash
     run: |
-      ./apic build -l ${{ inputs.project-path }} ${{ inputs.project }} -o built-project.zip
+      ./apic test -l ${{ inputs.project-path }} ${{ inputs.project }}
+      ./apic test -l ${{ inputs.project-path }} ${{ inputs.project }} -en ${{ inputs.test-endpoint }} -n ${{ inputs.test-name }}
 
-  - name: Publish project with apic CLI
-    shell: bash
-    run: |
-      ./apic projects:publish --insecure-skip-tls-verify --server ${{ inputs.api-host }} --org ${{ inputs.provider-org }} --catalog ${{ inputs.catalog }} built-project.zip
