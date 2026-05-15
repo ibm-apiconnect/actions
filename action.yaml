@@ -99,12 +99,11 @@ runs:
         
         # Create annotations for each failed test
         jq -r '.testResults[].results[] | select(.allTests != null) | .allTests[] | to_entries[] | select(.value.status == false) |
-          "::error title=" + .value.error.test + "::" + .value.error.message' test_results.json || true
+          "::error title=Tests: " + .value.error.test + "::" + .value.error.message' test_results.json || true
         
         # Fail the job if tests failed
         if [ "$OVERALL_STATUS" = "Failed" ]; then
-          echo "::error::Test suite failed with $FAILED_TESTS failed test(s)"
-          exit 1
+          exit $FAILED_TESTS
         fi
       else
         echo "::warning::test_results.json not found"
