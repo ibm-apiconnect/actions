@@ -84,4 +84,29 @@ runs:
     run: |
       ./apic test -l ${{ inputs.project-path }} ${{ inputs.project }}
       ./apic test -l ${{ inputs.project-path }} ${{ inputs.project }} -en ${{ inputs.test-endpoint }} -n ${{ inputs.test-name }}
+      
+      # Parse test results and create annotations
+      if [ -f "test_results.json" ]; then
+        echo "Parsing test results..."
+        
+        # Extract overall status
+        OVERALL_STATUS=$(jq -r '.overAllSummary.overAllStatus' test_results.json)
+        TOTAL_TESTS=$(jq -r '.overAllSummary.totalTests' test_results.json)
+        PASSED_TESTS=$(jq -r '.overAllSummary.overAllPassedTests' test_results.json)
+        FAILED_TESTS=$(jq -r '.overAllSummary.overAllFailedTests' test_results.json)
+        
+        echo "Test Results: $PASSED_TESTS/$TOTAL_TESTS passed, $FAILED_TESTS failed"
+        
+        # Create annotations for each failed test
+        jq -r '.testResults[].results[] | select(.allTests != null) | .allTests[] | to_entries[] | select(.value.status == false) |
+          "::error title=" + .value.error.test + "::" + .value.error.message' test_results.json || true
+        
+        # Fail the job if tests failed
+        if [ "$OVERALL_STATUS" = "Failed" ]; then
+          echo "::error::Test suite failed with $FAILED_TESTS failed test(s)"
+          exit 1
+        fi
+      else
+        echo "::warning::test_results.json not found"
+      fi
 
