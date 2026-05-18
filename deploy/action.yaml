@@ -1,0 +1,83 @@
+name: 'Publish API'
+description: 'Publish API to IBM API Connect'
+inputs:
+  manager-host:  
+    description: 'API Manager hostname'
+    required: true
+  api-host:  
+    description: 'Platform API hostname'
+    required: true
+  iam-apikey:  
+    description: 'IAM API key - require this, apikey or username,password and realm'
+    required: false
+  apikey:  
+    description: 'APIC API key - require this, iam-apikey or username,password and realm'
+    required: false
+  username:  
+    description: 'API Manager username'
+    required: false
+  password:  
+    description: 'API Manager password'
+    required: false
+  realm:  
+    description: 'Realm for log in '
+    default: "provider/default-idp-2"
+    required: false
+  provider-org:  
+    description: 'Name of ID of provider org to publish to'
+    required: true
+  catalog:  
+    description: 'Name of ID of catalog to publish to'
+    required: true
+  project:  
+    description: 'Name of project to build'
+    required: true
+    default: 'project'
+  project-path:  
+    description: 'Path to project to build'
+    required: true
+    default: '.'    
+branding:
+  icon: 'upload-cloud'
+  color: 'blue'
+runs:
+  using: "composite"
+  steps:
+
+  - name: Get APIC Toolkit
+    shell: bash
+    run: |
+      curl -LO https://${{ inputs.manager-host }}/client-downloads/toolkit-linux.tgz
+      tar -zxf toolkit-linux.tgz
+      ./apic --accept-license --live-help version
+
+  - name: Login to API Manager with provided credentials
+    shell: bash
+    run: |
+      if [[ "${{ inputs.iam-apikey }}" != "" ]]; then
+        echo "Using IAM API Key"
+        mkdir ~/.apiconnect/
+        touch ~/.apiconnect/token
+        ACCESS_TOKEN=$(curl -s "https://iam.cloud.ibm.com/identity/token" -H 'Content-Type: application/x-www-form-urlencoded' -H 'Accept: application/json' --data "grant_type=urn:ibm:params:oauth:grant-type:apikey&apikey=${{ inputs.iam-apikey}}" | jq .access_token -r)
+        echo "${{ inputs.api-host}}/api: |
+              refresh_token: \"\"
+              access_token: ${ACCESS_TOKEN}" > ~/.apiconnect/token 
+      fi
+      if [[ "${{ inputs.apikey }}" != "" ]]; then
+        echo "Using apikey"
+        ./apic login --insecure-skip-tls-verify true --server ${{ inputs.api-host }} --sso --apiKey ${{ inputs.apikey }} --context provider
+      fi
+      if [[ "${{ inputs.username }}" != "" ]]; then
+        echo "Using username/password"
+        ./apic login --insecure-skip-tls-verify true --server ${{ inputs.api-host }} --username ${{ inputs.username }} --password ${{ inputs.password }} --realm ${{ inputs.realm }}
+      fi
+
+  - name: Build deployment for project
+    shell: bash
+    run: |
+      ./apic build -l ${{ inputs.project-path }} ${{ inputs.project }} -o built-project.zip
+
+  - name: Publish project with apic CLI
+    shell: bash
+    run: |
+      ./apic projects:publish --insecure-skip-tls-verify --server ${{ inputs.api-host }} --org ${{ inputs.provider-org }} --catalog ${{ inputs.catalog }} built-project.zip
