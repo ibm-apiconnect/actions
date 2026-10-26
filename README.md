@@ -1,6 +1,6 @@
 # IBM API Connect GitHub Actions
 
-This repository contains reusable GitHub Actions for IBM API Connect, enabling you to automate API deployment, governance validation, and testing using the API Connect Toolkit. Originally based on [this blog post](https://community.ibm.com/community/user/integration/blogs/ricky-moorhouse1/2021/03/16/whats-new-use-the-api-connect-toolkit-with-github).
+This repository contains reusable GitHub Actions for IBM API Connect version 12, enabling you to automate API deployment, governance validation, and testing using the API Connect Toolkit. If you are looking for v10 support - please check the [main branch](https://github.com/ibm-apiconnect/actions/tree/main)
 
 ## Available Actions
 
@@ -14,13 +14,14 @@ Deploy API projects to IBM API Connect catalogs.
 ```yaml
 - uses: ibm-apiconnect/actions/deploy@v12
   with:
-    manager-host: {{ manager hostname }}
-    api-host: {{ platform api hostname }}
-    provider-org: {{ provider org name }}
-    catalog: {{ catalog name }}
-    apikey: {{ API Connect apikey }}
-    project-path: {{ product path within repo }}
-    project: {{ name of project to publish }}
+    api-host: ${{ secrets.APIC_API_HOST }}
+    client-id: ${{ secrets.APIC_CLIENT_ID }}
+    client-secret: ${{ secrets.APIC_CLIENT_SECRET }}
+    provider-org: ${{ secrets.APIC_PROVIDER_ORG }}
+    catalog: ${{ secrets.APIC_CATALOG }}
+    apikey: ${{ secrets.APIC_APIKEY }}
+    project-path: .
+    project: my-api-project
 ```
 
 [View detailed deploy documentation →](deploy/README.md)
@@ -109,8 +110,9 @@ jobs:
       - uses: actions/checkout@v2
       - uses: ibm-apiconnect/actions/deploy@v12
         with:
-          manager-host: ${{ secrets.APIC_MANAGER_HOST }}
           api-host: ${{ secrets.APIC_API_HOST }}
+          client-id: ${{ secrets.APIC_CLIENT_ID }}
+          client-secret: ${{ secrets.APIC_CLIENT_SECRET }}
           provider-org: ${{ secrets.APIC_PROVIDER_ORG }}
           catalog: production
           apikey: ${{ secrets.APIC_APIKEY }}
@@ -123,15 +125,23 @@ jobs:
 All actions share these common authentication parameters:
 
 ### Required Parameters
-- **manager-host** - The hostname for API Manager
 - **api-host** - The hostname for the Platform API
 - **provider-org** - The provider organization to use
+
+### Credentials (deploy action only)
+
+The deploy action authenticates directly against the API Connect REST API and requires toolkit credentials from `credentials.json`:
+
+- **client-id** - Toolkit client ID
+- **client-secret** - Toolkit client secret
+
+Obtain these by logging in to API Manager, clicking **Download toolkit**, and downloading `credentials.json` from the same dialog. Store them as GitHub Actions secrets (`APIC_CLIENT_ID` and `APIC_CLIENT_SECRET`). See the [deploy action documentation](deploy/README.md#finding-your-credentials) for full details.
 
 ### Authentication Options
 
 You must provide one of these authentication methods, depending on your API Connect deployment:
 
-- **apikey** - An API Key obtained from `{manager-host}/manager/auth/manager/sign-in/?from=TOOLKIT` (typically used with an OIDC user registry, e.g., in APIC on AWS)
+- **apikey** - A platform API key generated from **My account > API keys** in API Manager (typically used with OIDC users, e.g. APIC on AWS)
 - **username** / **password** / **realm** - Username, password, and realm to authenticate (typically used with a local user registry or LDAP)
 - **iam-apikey** - An IBM Cloud API Key (for use with reserved instance)
 

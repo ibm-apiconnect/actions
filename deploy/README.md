@@ -1,19 +1,20 @@
 # API Connect Deploy Action
 
-Deploy API projects to IBM API Connect catalogs using the API Connect Toolkit.
+Deploy API projects to IBM API Connect catalogs using the REST API.
 
 ## Usage
 
 ```yaml
 - uses: ibm-apiconnect/actions/deploy@v12
   with:
-    manager-host: {{ manager hostname }}
-    api-host: {{ platform api hostname }}
-    provider-org: {{ provider org name }}
-    catalog: {{ catalog name }}
-    apikey: {{ API Connect apikey }}
-    project-path: {{ product path within repo }}
-    project: {{ name of project to publish }}
+    api-host: ${{ secrets.APIC_API_HOST }}
+    client-id: ${{ secrets.APIC_CLIENT_ID }}
+    client-secret: ${{ secrets.APIC_CLIENT_SECRET }}
+    provider-org: ${{ secrets.APIC_PROVIDER_ORG }}
+    catalog: ${{ secrets.APIC_CATALOG }}
+    apikey: ${{ secrets.APIC_APIKEY }}
+    project-path: .
+    project: my-api-project
 ```
 
 ## Complete Example
@@ -33,8 +34,9 @@ jobs:
       - uses: actions/checkout@v2
       - uses: ibm-apiconnect/actions/deploy@v12
         with:
-          manager-host: ${{ secrets.APIC_MANAGER_HOST }}
           api-host: ${{ secrets.APIC_API_HOST }}
+          client-id: ${{ secrets.APIC_CLIENT_ID }}
+          client-secret: ${{ secrets.APIC_CLIENT_SECRET }}
           provider-org: ${{ secrets.APIC_PROVIDER_ORG }}
           catalog: ${{ secrets.APIC_CATALOG }}
           apikey: ${{ secrets.APIC_APIKEY }}
@@ -46,16 +48,39 @@ jobs:
 
 The following parameters are always required:
 
- - manager-host - The hostname for API Manager
- - api-host - The hostname for the Platform API
- - provider-org - The provider org to use. 
- - catalog - The name of the catalog to publish the API into
- - project-path - The path to the folder within the repo containing API Projects
- - project - The name of the project to publish (use --all for all projects)
+ - **api-host** - The hostname for the Platform API
+ - **client-id** - Toolkit client ID (see [Finding your credentials](#finding-your-credentials))
+ - **client-secret** - Toolkit client secret (see [Finding your credentials](#finding-your-credentials))
+ - **provider-org** - The provider org to use
+ - **catalog** - The name of the catalog to publish the API into
+ - **project-path** - The path to the folder within the repo containing API projects
+ - **project** - The name of the project to publish
 
-Authentication options - you will need one of these sets, depending on your API Connect deployment
+Authentication options — you will need one of these sets, depending on your API Connect deployment:
 
- - apikey - An API Key obtained from {manager-host}/manager/auth/manager/sign-in/?from=TOOLKIT (typically used with an OIDC user registry e.g. in APIC on AWS)
- - username / password / realm - the username, password and realm to use to authenticate (typically used with a local user registry or LDAP)
- - iam-apikey - An IBM Cloud API Key (for use with reserved instance)
+ - **apikey** - A platform API key generated from **My account > API keys** in API Manager (typically used with OIDC users, e.g. APIC on AWS)
+ - **username** / **password** / **realm** - Username, password, and realm (typically used with a local user registry or LDAP)
+
+## Finding Your Credentials
+
+The `client-id` and `client-secret` come from the **toolkit credentials file** (`credentials.json`) that API Manager generates alongside the toolkit download.
+
+To obtain them:
+
+1. Log in to API Manager (`https://<manager-host>/manager`)
+2. Click **Download toolkit** from the home page
+3. Download `credentials.json` from the same dialog — it contains a `toolkit` section with `client_id` and `client_secret`
+
+The values look like:
+
+```json
+{
+  "toolkit": {
+    "client_id": "599b7aef-8841-4ee2-88a0-84d49c4d6ff2",
+    "client_secret": "0ea28423-e73b-47d4-b40e-ddb45c48bb0c"
+  }
+}
+```
+
+> **Important:** Store these as [GitHub Actions secrets](https://docs.github.com/en/actions/security-guides/using-secrets-in-github-actions) — never commit them to your repository. Add them as `APIC_CLIENT_ID` and `APIC_CLIENT_SECRET` in your repository's **Settings > Secrets and variables > Actions**.
 
