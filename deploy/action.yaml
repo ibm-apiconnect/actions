@@ -79,7 +79,7 @@ runs:
   - name: Build deployment for project
     shell: bash
     run: |
-      (cd "${{ inputs.project-path }}" && zip -r "${GITHUB_WORKSPACE}/built-project.zip" .)
+      (cd "${{ inputs.project-path }}" && find . -type f \( -name '*.yml' -o -name '*.yaml' -o -name '*.json' \) | zip "${GITHUB_WORKSPACE}/built-project.zip" -@)
 
   - name: Publish project via REST
     shell: bash
