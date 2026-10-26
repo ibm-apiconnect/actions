@@ -105,7 +105,7 @@ runs:
         $API/catalogs/${{ inputs.provider-org }}/${{ inputs.catalog }}/publish-project \
         -H "Authorization: Bearer ${APIC_TOKEN}" \
         -H 'Accept: application/json' \
-        -F "project=@built-project.zip;type=application/zip")
+        -F "project=@${GITHUB_WORKSPACE}/built-project.zip;type=application/zip")
       HTTP_STATUS=$(echo "$RESULT" | tail -1)
       BODY=$(echo "$RESULT" | head -n -1)
       echo "$BODY"
