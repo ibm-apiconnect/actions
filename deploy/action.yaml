@@ -1,42 +1,45 @@
 name: 'Publish API'
 description: 'Publish API to IBM API Connect'
 inputs:
-  manager-host:  
+  manager-host:
     description: 'API Manager hostname'
     required: true
-  api-host:  
+  api-host:
     description: 'Platform API hostname'
     required: true
-  iam-apikey:  
-    description: 'IAM API key - require this, apikey or username,password and realm'
+  client-id:
+    description: 'Toolkit client ID from credentials.json'
+    required: true
+  client-secret:
+    description: 'Toolkit client secret from credentials.json'
+    required: true
+  apikey:
+    description: 'APIC platform API key (grant_type=api_key). Use this or username+password+realm.'
     required: false
-  apikey:  
-    description: 'APIC API key - require this, iam-apikey or username,password and realm'
-    required: false
-  username:  
+  username:
     description: 'API Manager username'
     required: false
-  password:  
+  password:
     description: 'API Manager password'
     required: false
-  realm:  
-    description: 'Realm for log in '
+  realm:
+    description: 'Realm for log in'
     default: "provider/default-idp-2"
     required: false
-  provider-org:  
-    description: 'Name of ID of provider org to publish to'
+  provider-org:
+    description: 'Name or ID of provider org to publish to'
     required: true
-  catalog:  
-    description: 'Name of ID of catalog to publish to'
+  catalog:
+    description: 'Name or ID of catalog to publish to'
     required: true
-  project:  
+  project:
     description: 'Name of project to build'
     required: true
     default: 'project'
-  project-path:  
+  project-path:
     description: 'Path to project to build'
     required: true
-    default: '.'    
+    default: '.'
 branding:
   icon: 'upload-cloud'
   color: 'blue'
@@ -44,40 +47,77 @@ runs:
   using: "composite"
   steps:
 
-  - name: Get APIC Toolkit
+  - name: Get bearer token
     shell: bash
     run: |
-      curl -LO https://${{ inputs.manager-host }}/client-downloads/toolkit-linux.tgz
-      tar -zxf toolkit-linux.tgz
-      ./apic --accept-license --live-help version
-
-  - name: Login to API Manager with provided credentials
-    shell: bash
-    run: |
-      if [[ "${{ inputs.iam-apikey }}" != "" ]]; then
-        echo "Using IAM API Key"
-        mkdir ~/.apiconnect/
-        touch ~/.apiconnect/token
-        ACCESS_TOKEN=$(curl -s "https://iam.cloud.ibm.com/identity/token" -H 'Content-Type: application/x-www-form-urlencoded' -H 'Accept: application/json' --data "grant_type=urn:ibm:params:oauth:grant-type:apikey&apikey=${{ inputs.iam-apikey}}" | jq .access_token -r)
-        echo "${{ inputs.api-host}}/api: |
-              refresh_token: \"\"
-              access_token: ${ACCESS_TOKEN}" > ~/.apiconnect/token 
-      fi
+      API=https://${{ inputs.api-host }}/api
       if [[ "${{ inputs.apikey }}" != "" ]]; then
-        echo "Using apikey"
-        ./apic login --insecure-skip-tls-verify true --server ${{ inputs.api-host }} --sso --apiKey ${{ inputs.apikey }} --context provider
+        echo "Using API key grant"
+        TOKEN=$(curl -s -X POST $API/token \
+          -H 'Content-Type: application/json' -H 'Accept: application/json' \
+          -d '{
+            "api_key": "'"${{ inputs.apikey }}"'",
+            "client_id": "'"${{ inputs.client-id }}"'",
+            "client_secret": "'"${{ inputs.client-secret }}"'",
+            "grant_type": "api_key"
+          }' | jq -r .access_token)
+      else
+        echo "Using password grant"
+        TOKEN=$(curl -s -X POST $API/token \
+          -H 'Content-Type: application/json' -H 'Accept: application/json' \
+          -d '{
+            "username": "'"${{ inputs.username }}"'",
+            "password": "'"${{ inputs.password }}"'",
+            "realm": "'"${{ inputs.realm }}"'",
+            "client_id": "'"${{ inputs.client-id }}"'",
+            "client_secret": "'"${{ inputs.client-secret }}"'",
+            "grant_type": "password"
+          }' | jq -r .access_token)
       fi
-      if [[ "${{ inputs.username }}" != "" ]]; then
-        echo "Using username/password"
-        ./apic login --insecure-skip-tls-verify true --server ${{ inputs.api-host }} --username ${{ inputs.username }} --password ${{ inputs.password }} --realm ${{ inputs.realm }}
-      fi
+      echo "APIC_TOKEN=${TOKEN}" >> $GITHUB_ENV
 
   - name: Build deployment for project
     shell: bash
     run: |
-      ./apic build -l ${{ inputs.project-path }} ${{ inputs.project }} -o built-project.zip
+      PROJECT="${{ inputs.project }}"
+      PROJECT_PATH="${{ inputs.project-path }}"
+      STAGING=$(mktemp -d)
 
-  - name: Publish project with apic CLI
+      # Sort files: OpenAPI/Swagger specs go under resources/<project>/,
+      # everything else (kind: API, Product, Plan, etc.) goes at the root.
+      while IFS= read -r f; do
+        if grep -qE '^\s*(openapi|swagger)\s*:' "$f" 2>/dev/null; then
+          mkdir -p "${STAGING}/resources/${PROJECT}"
+          cp "$f" "${STAGING}/resources/${PROJECT}/$(basename "$f")"
+        else
+          cp "$f" "${STAGING}/$(basename "$f")"
+        fi
+      done < <(find "$PROJECT_PATH" -type f \( -name '*.yml' -o -name '*.yaml' -o -name '*.json' \))
+
+      (cd "$STAGING" && zip -r "${GITHUB_WORKSPACE}/built-project.zip" .)
+      rm -rf "$STAGING"
+
+  - name: Publish project via REST
     shell: bash
     run: |
-      ./apic projects:publish --insecure-skip-tls-verify --server ${{ inputs.api-host }} --org ${{ inputs.provider-org }} --catalog ${{ inputs.catalog }} built-project.zip
+      API=https://${{ inputs.api-host }}/api
+      RESULT=$(curl -s -w '\n%{http_code}' -X POST \
+        $API/catalogs/${{ inputs.provider-org }}/${{ inputs.catalog }}/publish-project \
+        -H "Authorization: Bearer ${APIC_TOKEN}" \
+        -H 'Accept: application/json' \
+        -F "project=@built-project.zip;type=application/zip")
+      HTTP_STATUS=$(echo "$RESULT" | tail -1)
+      BODY=$(echo "$RESULT" | head -n -1)
+      echo "$BODY"
+      if [[ "$HTTP_STATUS" -ge 400 ]]; then
+        echo "Publish failed with status $HTTP_STATUS"
+        exit 1
+      fi
+
+  - name: Sign out
+    shell: bash
+    if: always()
+    run: |
+      curl -s -X POST https://${{ inputs.api-host }}/api/me/sign-out \
+        -H "Authorization: Bearer ${APIC_TOKEN}" \
+        -H 'Accept: application/json' || true
