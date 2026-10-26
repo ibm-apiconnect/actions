@@ -79,7 +79,23 @@ runs:
   - name: Build deployment for project
     shell: bash
     run: |
-      (cd "${{ inputs.project-path }}" && find . -type f \( -name '*.yml' -o -name '*.yaml' -o -name '*.json' \) | zip "${GITHUB_WORKSPACE}/built-project.zip" -@)
+      PROJECT="${{ inputs.project }}"
+      PROJECT_PATH="${{ inputs.project-path }}"
+      STAGING=$(mktemp -d)
+
+      # Sort files: OpenAPI/Swagger specs go under resources/<project>/,
+      # everything else (kind: API, Product, Plan, etc.) goes at the root.
+      while IFS= read -r f; do
+        if grep -qE '^\s*(openapi|swagger)\s*:' "$f" 2>/dev/null; then
+          mkdir -p "${STAGING}/resources/${PROJECT}"
+          cp "$f" "${STAGING}/resources/${PROJECT}/$(basename "$f")"
+        else
+          cp "$f" "${STAGING}/$(basename "$f")"
+        fi
+      done < <(find "$PROJECT_PATH" -type f \( -name '*.yml' -o -name '*.yaml' -o -name '*.json' \))
+
+      (cd "$STAGING" && zip -r "${GITHUB_WORKSPACE}/built-project.zip" .)
+      rm -rf "$STAGING"
 
   - name: Publish project via REST
     shell: bash
